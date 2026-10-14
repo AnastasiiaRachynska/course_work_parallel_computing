@@ -9,7 +9,7 @@ RUN mkdir build && cd build && cmake .. && make
 
 FROM  ubuntu:22.04
 WORKDIR /app
-COPY --from=builder /app/build/main /app/main
+COPY --from=builder /app/build/course_work_parallel_computing /app/main
 COPY --from=builder /app/data /app/data
 
 EXPOSE 8080
