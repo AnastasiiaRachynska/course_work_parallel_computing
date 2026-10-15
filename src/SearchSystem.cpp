@@ -3,6 +3,4 @@
 //
 
 #include "SearchSystem.h"
-
-namespace SearchSystem {
-} // SearchSystem
+SearchSystem::SearchSystem(Ollama& ollama_instance) : ollama(ollama_instance){}

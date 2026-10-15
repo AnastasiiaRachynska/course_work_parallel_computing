@@ -10,6 +10,8 @@
     #include <arpa/inet.h>
 #endif
 
+ApiHandler::ApiHandler(SearchSystem& search_system) : engine(search_system) {}
+
 void ApiHandler::handle_request(int client_socket, string request) {
     if (request.find("GET /api/health") != string::npos) {
         send_response(client_socket, handle_health());
@@ -24,6 +26,6 @@ void ApiHandler::send_response(int client_socket, json json_response) {
 json ApiHandler::handle_health() {
     json response;
     response["status"] = "OK";
-    response["ollama"] = true;
+    response["ollama"] = engine.ollama.is_working();
     return response;
 }

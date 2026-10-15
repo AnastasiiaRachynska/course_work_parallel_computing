@@ -43,7 +43,7 @@ int main() {
     struct sockaddr_in serverAddr;
     serverSocket = socket(AF_INET, SOCK_STREAM, 0);
     if (serverSocket == -1) {
-        std::cerr << "Socket creation failed\n";
+        cerr << "Socket creation failed\n";
         return 1;
     }
     memset(&serverAddr, 0, sizeof(serverAddr));
@@ -61,7 +61,9 @@ int main() {
         close_socket(serverSocket);
         return 1;
     }
-    std::cout << "Server listening on port " << PORT << "...\n";
+    cout << "Server listening on port " << PORT << "...\n";
+    Ollama ollama;
+    SearchSystem searchSystem(ollama);
     while (true) {
         struct sockaddr_in clientAddr;
         socklen_t clientAddrLen = sizeof(clientAddr);
@@ -73,10 +75,13 @@ int main() {
         }
         cout << "Connection accepted from " << inet_ntoa(clientAddr.sin_addr) << ":" << ntohs(clientAddr.sin_port) <<endl;
         //хендлер запитів і відправка
-        char buffer[1024];
+        char buffer[1024] = {0};
         int received = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
-        if (received == 0) continue;
-        ApiHandler apiHandler;
+        if (received <= 0) {
+            close_socket(clientSocket);
+            continue;
+        }
+        ApiHandler apiHandler(searchSystem);
         string request = buffer;
         apiHandler.handle_request(clientSocket, request);
     }

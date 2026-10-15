@@ -5,9 +5,12 @@
 #ifndef COURSE_WORK_PARALLEL_COMPUTING_SEARCHSYSTEM_H
 #define COURSE_WORK_PARALLEL_COMPUTING_SEARCHSYSTEM_H
 
-namespace SearchSystem {
-    class SearchSystem {
-    };
-} // SearchSystem
+#include "Ollama.h"
+
+class SearchSystem {
+public:
+    Ollama& ollama;
+    SearchSystem(Ollama& ollama);
+}; // SearchSystem
 
 #endif //COURSE_WORK_PARALLEL_COMPUTING_SEARCHSYSTEM_H
