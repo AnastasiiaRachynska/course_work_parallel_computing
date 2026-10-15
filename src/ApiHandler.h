@@ -1,13 +1,25 @@
-//
-// Created by User on 15.10.2026.
-//
-
 #ifndef COURSE_WORK_PARALLEL_COMPUTING_APIHANDLER_H
 #define COURSE_WORK_PARALLEL_COMPUTING_APIHANDLER_H
 
-namespace ApiHandler {
-    class ApiHandler {
-    };
-} // ApiHandler
+#include <iostream>
+#include <nlohmann/json.hpp>
+#include <string>
+using json = nlohmann::json;
+using namespace std;
 
-#endif //COURSE_WORK_PARALLEL_COMPUTING_APIHANDLER_H
+
+class ApiHandler {
+public:
+    //engine : SearchSystem&
+    //ollama : Ollama&
+    void handle_request(int client_socket, string request);
+
+    void send_response(int client_socket, json json_response);
+
+    json handle_health();
+
+
+};
+
+
+#endif
