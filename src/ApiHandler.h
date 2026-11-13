@@ -22,9 +22,9 @@ public:
 
     json handle_health();
 
-    json handle_index(int threads);
+    json handle_index(string threads);
 
-    json handle_health(string query);
+    json handle_search(string query);
 
     json handle_stats();
 
