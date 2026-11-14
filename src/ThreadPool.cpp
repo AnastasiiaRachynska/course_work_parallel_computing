@@ -18,17 +18,27 @@ void ThreadPool::worker(ThreadPool *pool) {
             while (pool->is_working && pool->work_queue.empty()) {
                 pool->cv.wait(lock);
             }
-            if (!pool->is_working) return;
+            if (!pool->is_working && pool->work_queue.empty()) return;
             task = pool->work_queue.front();
             pool->work_queue.pop();
+            pool->active_tasks++;
         }
-
+        pool->cv_task_space.notify_one();
         task();
+
+        {
+            lock_guard<mutex> lock(pool->mtx);
+            pool->active_tasks--;
+        }
+        pool->cv_tasks_done.notify_one();
     }
 }
 
 void ThreadPool::terminate() {
-    is_working = false;
+    {
+        lock_guard<mutex> lock(mtx);
+        is_working = false;
+    }
     cv.notify_all();
     for (int i = 0; i < threads.size(); i++) threads[i].join();
 }
@@ -37,12 +47,19 @@ void ThreadPool::addTask(function<void()> task) {
     bool added = false;
     {
         unique_lock<mutex> lock(mtx);
-        if (work_queue.size() < 200) {
-            work_queue.push(task);
-            added = true;
+        while (work_queue.size() >= 200) {
+            cv_task_space.wait(lock);
         }
+        work_queue.push(task);
     }
-    if (added) cv.notify_one();
+    cv.notify_one();
+}
+
+void ThreadPool::wait_all() {
+    unique_lock<mutex> lock(mtx);
+    while (!work_queue.empty() || active_tasks > 0) {
+        cv_tasks_done.wait(lock);
+    }
 }
 
 ThreadPool::~ThreadPool() {
