@@ -8,6 +8,8 @@
 #include "InvertedIndex.h"
 #include "Ollama.h"
 #include <nlohmann/json.hpp>
+#include "ThreadPool.h"
+
 using json = nlohmann::json;
 using namespace std;
 
@@ -16,11 +18,15 @@ public:
 
     Ollama& ollama;
     InvertedIndex invertedIndex;
+    InvertedIndex::stats_data statics;
+    
+
     SearchSystem(Ollama& ollama);
 
+
     json search(string query);
-    stats_data index_dataset(int threads_num);
-    stats_data get_stats();
+    InvertedIndex::stats_data index_dataset(int threads_num);
+    InvertedIndex::stats_data get_stats();
 
 }; // SearchSystem
 
