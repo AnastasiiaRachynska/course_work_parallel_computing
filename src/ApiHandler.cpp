@@ -23,10 +23,10 @@ void ApiHandler::handle_request(int client_socket, string request) {
     if (request.find("GET /api/health") != string::npos) {
         send_response(client_socket, handle_health());
     }
-    if (request.find("GET /api/index") != string::npos) {
+    if (request.find("POST /api/index") != string::npos) {
         send_response(client_socket, handle_index(extract_body(request)));
     }
-    if (request.find("GET /api/handle_search") != string::npos) {
+    if (request.find("POST /api/search") != string::npos) {
         send_response(client_socket, handle_search(extract_body(request)));
     }
     if (request.find("GET /api/stats") != string::npos) {
@@ -49,9 +49,9 @@ json ApiHandler::handle_health() {
 json ApiHandler::handle_index(string threads) {
     int threads_num = json::parse(threads).value("threads", 2);
     json response;
-    stats_data raw_results = engine.index_dataset(threads_num);
+    InvertedIndex::stats_data raw_results = engine.index_dataset(threads_num);
     response["status"] = "OK";
-    response["document_indexed"] = raw_results.docs_num;
+    response["documents_indexed"] = raw_results.docs_num;
     response["time_ms"] = raw_results.build_time_ms;
     return response;
 }
@@ -61,7 +61,7 @@ json ApiHandler::handle_search(string query) {
 }
 
 json ApiHandler::handle_stats() {
-    stats_data stats = engine.get_stats();
+    InvertedIndex::stats_data stats = engine.get_stats();
     json response;
     response["documents"] = stats.docs_num;
     response["index_build_time_ms"] = stats.build_time_ms;
