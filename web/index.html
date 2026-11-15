@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search System</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
+</head>
+<body>
+    <section id="main-section">
+        <h1>Search System</h1>
+
+        <section class="index-section"> 
+            <h3>To start the work, choose the number of threads:</h3>
+            <form id="index-form">
+                <input type="number" id="index-threads" placeholder="Enter number of threads">
+                <button type="submit">Index</button>
+            </form>
+            <div id="index-results">Index results will appear here</div>
+        </section>
+
+
+        <section class="search-section">
+            <h3>Search Section:</h3>
+
+            <form id="search-form">
+                <input type="text" id="search-query" placeholder="Enter your query">
+                <button type="submit">Search</button>
+            </form>
+
+            <div id="search-results" class="results-box">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Score</th>
+                            <th>Snippet</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Example</td>
+                            <td>Example</td>
+                            <td>Example</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </section>
+
+    <section class="sidebar-section">
+
+        <h3>Search Pipeline:</h3>
+        <section class="pipeline-section">
+        <h3>Search pipeline data</h3>
+        </section>
+
+        <section class="sidebar-buttons">
+            <button id="health-button">Health</button>
+            <button id="stats-button">Stats</button>
+        </section>
+        <div id="stats-results"></div>
+    </section>
+</body>
+</html>

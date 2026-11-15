@@ -1,0 +1,157 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    display: grid;
+    grid-template-columns: minmax(0, 3fr) minmax(240px, 1fr);
+    min-height: 100vh;
+    margin: 0;
+    background: #e6e3bd;
+    color: #2c2f0f;
+    font-family: Arial, sans-serif;
+}
+
+#main-section {
+    padding: 20px 28px;
+}
+
+#main-section > h1 {
+    margin: 0;
+    padding: 0 0 16px;
+    border-bottom: 2px solid #2c2f0f;
+}
+
+.index-section {
+    padding: 12px 0 20px;
+    border-bottom: 2px solid #2c2f0f;
+}
+
+#index-form,
+#search-form {
+    display: flex;
+    gap: 12px;
+    margin: 16px 0;
+}
+
+input {
+    flex: 1;
+    min-width: 0;
+    padding: 12px;
+    border: 2px solid #2c2f0f;
+    background: #d0df97;
+    font-size: 16px;
+}
+
+button {
+    padding: 10px 20px;
+    border: 2px solid #2c2f0f;
+    background: #5c710a;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+#index-results,
+#stats-results {
+    padding: 18px;
+    border: 2px solid #2c2f0f;
+    background: #eaeed3;
+}
+
+#index-results {
+    min-height: 48px;
+    border-radius: 24px;
+}
+
+.search-section {
+    padding-top: 20px;
+}
+
+/* #search-results {
+    min-height: 300px;
+    margin-top: 24px;
+    border-radius: 48px;
+    overflow-x: auto;
+} */
+
+#search-results table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff3f7;
+}
+
+#search-results th,
+#search-results td {
+    padding: 14px 12px;
+    border: 1px solid #2c2f0f;
+    text-align: left;
+    vertical-align: top;
+}
+
+#search-results th {
+    background: #d0df97;
+}
+
+#search-results th:first-child,
+#search-results td:first-child {
+    width: 12%;
+}
+
+#search-results th:nth-child(2),
+#search-results td:nth-child(2) {
+    width: 16%;
+}
+
+#search-results td:last-child {
+    overflow-wrap: anywhere;
+}
+
+.sidebar-section {
+    padding: 24px;
+    border-left: 2px solid #2c2f0f;
+}
+
+.pipeline-section {
+    display: grid;
+    min-height: 55vh;
+    padding: 20px;
+    border: 2px solid #2c2f0f;
+    border-radius: 48px;
+    background: #eaeed3;
+}
+
+.pipeline-section h3 {
+    margin: 0;
+}
+
+.sidebar-buttons {
+    display: grid;
+    grid-template-areas:
+        "health-button stats-button";
+    gap: 10px;
+    margin-top: 16px;
+    margin-bottom: 16px;
+}
+
+#health-button {
+    grid-area: health-button;
+}
+
+#stats-button {
+    grid-area: stats-button;
+}
+
+@media (max-width: 700px) {
+    body {
+        grid-template-columns: 1fr;
+    }
+
+    .sidebar-section {
+        border-top: 2px solid #2c2f0f;
+        border-left: 0;
+    }
+
+    .pipeline-section {
+        min-height: 260px;
+    }
+}
