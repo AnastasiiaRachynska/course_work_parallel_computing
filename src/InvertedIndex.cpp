@@ -24,7 +24,7 @@ void InvertedIndex::clear() {
     statics.threads_num = 0;
 }
 
-void InvertedIndex::add_document(vector<string> terms, int doc_id){
+void InvertedIndex::add_document(vector<string> terms, string doc_id){
     unordered_set<string> unique_terms;
 
     for (const string& term : terms){
@@ -54,7 +54,24 @@ void InvertedIndex::add_document(vector<string> terms, int doc_id){
 }
 
 
+vector<string> InvertedIndex::find_documents(string term) {
+    term = standardize_word(term);
+    if (term == "") return {};
 
+    hash<string> hasher;
+    size_t bucket_index = hasher(term) % index.size();
+    size_t buckets_per_mutex = index.size() / index_mutexes.size();
+    size_t mutex_index = bucket_index / buckets_per_mutex;
+    
+    lock_guard<mutex> lock(index_mutexes[mutex_index]);
+
+    for (Raw& raw : index[bucket_index]) {
+        if (raw.term == term) {
+            return raw.doc_ids;
+        }
+    }
+    return {};
+}
 
 
 

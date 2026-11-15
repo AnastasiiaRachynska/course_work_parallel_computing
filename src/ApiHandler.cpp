@@ -57,7 +57,14 @@ json ApiHandler::handle_index(string threads) {
 }
 
 json ApiHandler::handle_search(string query) {
-    return engine.search(query);
+    json request = json::parse(query, nullptr, false);
+    
+    if (request.is_discarded()) return json{{"error", "Invalid JSON"}};
+    
+    if (!request.is_object() || !request.contains("query") || !request["query"].is_string())
+        return {{"error", "Field 'query' must be a string"}};
+
+    return engine.search(request["query"].get<string>());
 }
 
 json ApiHandler::handle_stats() {

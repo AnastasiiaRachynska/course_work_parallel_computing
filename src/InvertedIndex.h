@@ -10,11 +10,11 @@
 
 using namespace std;
 
-
+string standardize_word(const string& raw_word);
 
 struct Raw{
     string term;
-    vector<int> doc_ids;
+    vector<string> doc_ids;
 };
 
 class InvertedIndex {
@@ -34,8 +34,9 @@ class InvertedIndex {
     stats_data statics;
 
     InvertedIndex();
-    void add_document(vector<string> terms, int doc_id);
+    void add_document(vector<string> terms, string doc_id);
     void clear();
+    vector<string> find_documents(string term);
 
     // vector<int> get_stats();
 

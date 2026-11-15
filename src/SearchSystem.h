@@ -7,6 +7,7 @@
 
 #include "InvertedIndex.h"
 #include "Ollama.h"
+#include <shared_mutex>
 #include <nlohmann/json.hpp>
 #include "ThreadPool.h"
 
@@ -14,6 +15,8 @@ using json = nlohmann::json;
 using namespace std;
 
 class SearchSystem {
+private:
+    shared_mutex mtx;
 public:
 
     Ollama& ollama;
