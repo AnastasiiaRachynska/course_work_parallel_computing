@@ -62,8 +62,12 @@ int main() {
         return 1;
     }
     cout << "Server listening on port " << PORT << "...\n";
+    
+    
     Ollama ollama;
     SearchSystem searchSystem(ollama);
+    ThreadPool threadPool(64); 
+
     while (true) {
         struct sockaddr_in clientAddr;
         socklen_t clientAddrLen = sizeof(clientAddr);
@@ -75,15 +79,17 @@ int main() {
         }
         cout << "Connection accepted from " << inet_ntoa(clientAddr.sin_addr) << ":" << ntohs(clientAddr.sin_port) <<endl;
         //хендлер запитів і відправка
-        char buffer[1024] = {0};
-        int received = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
-        if (received <= 0) {
+        
+        threadPool.addTask([clientSocket, &searchSystem](){
+            char buffer[1024] = {0};
+            int received = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
+            if (received > 0) {
+                ApiHandler apiHandler(searchSystem);
+                string request = buffer;
+                apiHandler.handle_request(clientSocket, request);
+            }
             close_socket(clientSocket);
-            continue;
-        }
-        ApiHandler apiHandler(searchSystem);
-        string request = buffer;
-        apiHandler.handle_request(clientSocket, request);
+        });
     }
 
     close_socket(serverSocket);
