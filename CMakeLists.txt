@@ -9,7 +9,13 @@ FetchContent_Declare(
         GIT_TAG v3.12.0
         GIT_SHALLOW TRUE
 )
-FetchContent_MakeAvailable(nlohmann_json)
+FetchContent_Declare(
+        cpp_httplib
+        GIT_REPOSITORY https://github.com/yhirose/cpp-httplib.git
+        GIT_TAG v0.66.0
+        GIT_SHALLOW TRUE
+)
+FetchContent_MakeAvailable(nlohmann_json cpp_httplib)
 
 add_executable(course_work_parallel_computing
         src/main.cpp
@@ -27,4 +33,4 @@ add_executable(course_work_parallel_computing
         src/ThreadPool.h
 )
 
-target_link_libraries(course_work_parallel_computing PRIVATE nlohmann_json::nlohmann_json)
+target_link_libraries(course_work_parallel_computing PRIVATE nlohmann_json::nlohmann_json httplib::httplib)

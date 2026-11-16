@@ -58,6 +58,18 @@ json SearchSystem::search(string query){
     }
     if(terms.empty()) return json{{"error", "No valid search terms"}};
 
+    vector<string> expanded_terms = ollama.expand_query(query);
+    if (expanded_terms.empty()) {
+        return json{{"error", "No expanded search terms"}};
+    }
+    for (const string& term : expanded_terms) {
+        stringstream ss(term);
+        string sub_term;
+        while (ss >> sub_term) {
+            if (standardize_word(sub_term) != "") terms.insert(standardize_word(sub_term));
+        }
+    }
+
     unordered_map<string, int> scores;
     json results = json::array();
 
