@@ -15,7 +15,14 @@ FetchContent_Declare(
         GIT_TAG v0.66.0
         GIT_SHALLOW TRUE
 )
-FetchContent_MakeAvailable(nlohmann_json cpp_httplib)
+FetchContent_Declare(
+        ixwebsocket
+        GIT_REPOSITORY https://github.com/machinezone/IXWebSocket.git
+        GIT_TAG v12.1.0
+        GIT_SHALLOW TRUE
+)
+set(USE_ZLIB OFF CACHE BOOL "Disable IXWebSocket compression")
+FetchContent_MakeAvailable(nlohmann_json cpp_httplib ixwebsocket)
 
 add_executable(course_work_parallel_computing
         src/main.cpp
@@ -33,4 +40,16 @@ add_executable(course_work_parallel_computing
         src/ThreadPool.h
 )
 
-target_link_libraries(course_work_parallel_computing PRIVATE nlohmann_json::nlohmann_json httplib::httplib)
+target_link_libraries(course_work_parallel_computing PRIVATE nlohmann_json::nlohmann_json httplib::httplib ixwebsocket::ixwebsocket)
+
+add_executable(search src/client.cpp)
+target_link_libraries(search PRIVATE nlohmann_json::nlohmann_json ixwebsocket::ixwebsocket)
+
+add_executable(try_index
+    tests/try-index.cpp
+    src/SearchSystem.cpp
+    src/InvertedIndex.cpp
+    src/Ollama.cpp
+    src/ThreadPool.cpp
+)
+target_link_libraries(try_index PRIVATE nlohmann_json::nlohmann_json httplib::httplib ixwebsocket::ixwebsocket)

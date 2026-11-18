@@ -11,6 +11,7 @@ FROM  ubuntu:22.04
 WORKDIR /app
 COPY --from=builder /app/build/course_work_parallel_computing /app/main
 COPY --from=builder /app/data /app/data
+COPY --from=builder /app/build/search /app/search
 
 EXPOSE 8080
 

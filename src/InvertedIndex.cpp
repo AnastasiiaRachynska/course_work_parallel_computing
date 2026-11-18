@@ -13,7 +13,7 @@ string standardize_word(const std::string& raw_word) {
     return result;
 }
 
-InvertedIndex::InvertedIndex(): index(1024), index_mutexes(64) {}
+InvertedIndex::InvertedIndex(): index(8192), index_mutexes(64) {}
 
 void InvertedIndex::clear() {
     for (auto& bucket : index) {
@@ -72,6 +72,3 @@ vector<string> InvertedIndex::find_documents(string term) {
     }
     return {};
 }
-
-
-

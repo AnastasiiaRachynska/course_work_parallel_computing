@@ -4,18 +4,18 @@
 #include <string>
 #include <mutex>
 #include <vector>
-using namespace std;
+// using namespace std;
 
 class Ollama {
 private:
-    string send_request(string prompt);
-    vector<string> process_answer(string answer);
+    std::string send_request(std::string prompt);
+    std::vector<std::string> process_answer(std::string answer);
 public:
-    string api_url;
-    string model_name = "llama3";
-    mutex mtx;
+    std::string api_url;
+    std::string model_name = "llama3";
+    std::mutex mtx;
 
-    vector<string> expand_query(string query);
+    std::vector<std::string> expand_query(std::string query);
 
     bool is_working();
 

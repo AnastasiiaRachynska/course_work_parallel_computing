@@ -15,7 +15,7 @@ using json = nlohmann::json;
 using namespace std::filesystem;
 using namespace std::chrono;
 
-SearchSystem::SearchSystem(Ollama& ollama_instance) : ollama(ollama_instance){}
+// SearchSystem::SearchSystem(Ollama& ollama_instance) : ollama(ollama_instance){}
 
 InvertedIndex::stats_data SearchSystem::get_stats() {
     shared_lock<shared_mutex> lock(mtx);
@@ -117,7 +117,7 @@ InvertedIndex::stats_data SearchSystem::index_dataset(int threads_num) {
         vector<path> files_to_index;
         invertedIndex.clear();
 
-        for (const auto& entry : directory_iterator("data/train")) {
+        for (const auto& entry : directory_iterator("data/test")) {
             if (entry.is_regular_file() && entry.path().extension() == ".txt") {
                 files_to_index.push_back(entry.path());
             }
@@ -146,4 +146,87 @@ InvertedIndex::stats_data SearchSystem::index_dataset(int threads_num) {
     invertedIndex.statics.threads_num = threads_num;
     invertedIndex.statics.docs_num = docs_indexed;
     return invertedIndex.statics;
+}
+
+
+json SearchSystem::search_stream(string query, ix::WebSocket& client){
+    auto start_time = steady_clock::now();
+    unordered_set<string> terms;
+    string term;
+    stringstream query_stream(query);
+
+    while (query_stream >> term) {
+        if (standardize_word(term) != "") terms.insert(standardize_word(term));
+    }
+    if(terms.empty()) return json{{"error", "No valid search terms"}};
+
+    vector<string> expanded_terms = ollama.expand_query(query);
+    if (expanded_terms.empty()) {
+        return json{{"error", "No expanded search terms"}};
+    }
+
+    json message = {{"stage", "query_expansion"}, 
+        {"data", {
+            {"original", query},
+            {"expanded_terms", expanded_terms}}}};
+    auto send_result = client.send(message.dump());
+
+    if(!send_result.success)
+        return json{{"error", "Failed to send query expansion message"}};
+
+    for (const string& term : expanded_terms) {
+        stringstream ss(term);
+        string sub_term;
+        while (ss >> sub_term) {
+            if (standardize_word(sub_term) != "") terms.insert(standardize_word(sub_term));
+        }
+    }
+
+    unordered_map<string, int> scores;
+    json results = json::array();
+
+    {
+        shared_lock<shared_mutex> lock(mtx);
+        for (const string& term : terms) {
+            vector<string> docs = invertedIndex.find_documents(term);
+
+            for (const string& doc_id : docs) scores[doc_id]++;
+        }
+        
+        vector<pair<string, int>> sorted_results(scores.begin(), scores.end());
+        sort(sorted_results.begin(), sorted_results.end(), [](const auto& a, const auto& b) {
+                 return a.second > b.second;
+        });
+
+        for (const auto& result : sorted_results) {
+            string doc_id = result.first;
+            string snippet;
+
+            if (!create_snippet(doc_id, terms, snippet))
+                return {{"error", "Cannot create document snippet"}};
+
+            double score = static_cast<double>(result.second) / terms.size();
+
+            results.push_back({{"doc_id", doc_id}, {"score", score},{"snippet", snippet}});
+        }
+    }
+
+    auto end_time = steady_clock::now();
+    auto search_time_ms = duration_cast<milliseconds>(end_time - start_time).count();
+    
+    message = {{"stage", "keyword_search"}, 
+        {"data", {
+            {"results", results},
+            {"time_ms", search_time_ms}}}};
+    auto send_result2 = client.send(message.dump());
+    if(!send_result2.success)
+        return json{{"error", "Failed to send keyword search message"}};
+    
+
+    message = {{"stage", "done"}};
+    auto send_result3 = client.send(message.dump());
+    if(!send_result3.success)
+        return json{{"error", "Failed to send done message"}};
+    
+    return {{"results", results}, {"time_ms", search_time_ms}};
 }

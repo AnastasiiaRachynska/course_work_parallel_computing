@@ -42,7 +42,7 @@ string Ollama::send_request(string prompt) {
     httplib::Client cli("ollama", 11434);
     cli.set_connection_timeout(5, 0);
     cli.set_read_timeout(90, 0);
-    json body = {{"model", model_name}, {"prompt", prompt}};
+    json body = {{"model", model_name}, {"prompt", prompt}, {"stream", false}};
 
     auto response = cli.Post("/api/generate", body.dump(), "application/json");
     if (!response || response->status != 200) {
