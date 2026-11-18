@@ -54,7 +54,7 @@ int main(int argc, char* argv[]) {
              string(argv[1]).find("--") != 0) {
         method = "POST";
         path = "/api/search";
-        json body = json{{"query", string(argv[1])}};
+        json body = json{{"query", string(argv[1])}, {"mode", "keyword"}};
         body_str = body.dump();
     }
     else {
@@ -68,45 +68,43 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    do{
-        struct sockaddr_in server_addr{};
-        server_addr.sin_family = AF_INET;
-        server_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-        server_addr.sin_port = htons(PORT);
-        if(connect(sock, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
-            cerr << "Failed to connect to server" << endl;
-            close_socket(sock);
-            return 1;
-        }
 
-        string request = method + " " + path + " HTTP/1.1\r\n"
-        "Host: localhost:8080\r\n"
-        "Content-Type: application/json\r\n"
-        "Content-Length: " + to_string(body_str.size()) + "\r\nConnection: close\r\n\r\n" + body_str;
+    struct sockaddr_in server_addr{};
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    server_addr.sin_port = htons(PORT);
+    if(connect(sock, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
+        cerr << "Failed to connect to server" << endl;
+        close_socket(sock);
+        return 1;
+    }
 
-        int result = send(sock, request.c_str(), request.size(), 0);
-        if(result < 0) {
-            cerr << "Failed to send request" << endl;
-            close_socket(sock);
-            return 1;
-        }
+    string request = method + " " + path + " HTTP/1.1\r\n"
+    "Host: localhost:8080\r\n"
+    "Content-Type: application/json\r\n"
+    "Content-Length: " + to_string(body_str.size()) + "\r\nConnection: close\r\n\r\n" + body_str;
 
-        string response;
-        char buffer[1024];
-        int bytes_received;
-        while((bytes_received = recv(sock, buffer, sizeof(buffer), 0)) > 0) {
-            response.append(buffer, bytes_received);
-        }
-        if(bytes_received < 0) {
-            cerr << "Failed to receive response" << endl;
-            close_socket(sock);
-            return 1;
-        }
+    int result = send(sock, request.c_str(), request.size(), 0);
+    if(result < 0) {
+        cerr << "Failed to send request" << endl;
+        close_socket(sock);
+        return 1;
+    }
+
+    string response;
+    char buffer[1024];
+    int bytes_received;
+    while((bytes_received = recv(sock, buffer, sizeof(buffer), 0)) > 0) {
+        response.append(buffer, bytes_received);
+    }
+    if(bytes_received < 0) {
+        cerr << "Failed to receive response" << endl;
+        close_socket(sock);
+        return 1;
+    }
         
-        cout << response << endl;
+    cout << response << endl;
             
-
-    } while(0);
     close_socket(sock);
     return 0;
 }

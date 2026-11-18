@@ -15,9 +15,9 @@ void ThreadPool::worker(ThreadPool *pool) {
         function<void()> task;
         {
             unique_lock<mutex> lock(pool->mtx);
-            while (pool->is_working && pool->work_queue.empty()) {
+            while (pool->is_working && pool->work_queue.empty())
                 pool->cv.wait(lock);
-            }
+
             if (!pool->is_working && pool->work_queue.empty()) return;
             task = pool->work_queue.front();
             pool->work_queue.pop();
@@ -57,9 +57,8 @@ void ThreadPool::addTask(function<void()> task) {
 
 void ThreadPool::wait_all() {
     unique_lock<mutex> lock(mtx);
-    while (!work_queue.empty() || active_tasks > 0) {
+    while (!work_queue.empty() || active_tasks > 0)
         cv_tasks_done.wait(lock);
-    }
 }
 
 ThreadPool::~ThreadPool() {

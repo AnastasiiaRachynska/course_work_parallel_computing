@@ -1,10 +1,6 @@
 #ifndef COURSE_WORK_PARALLEL_COMPUTING_APIHANDLER_H
 #define COURSE_WORK_PARALLEL_COMPUTING_APIHANDLER_H
 
-#include <iostream>
-#include <nlohmann/json.hpp>
-#include <string>
-#include "Ollama.h"
 #include "SearchSystem.h"
 using json = nlohmann::json;
 using namespace std;

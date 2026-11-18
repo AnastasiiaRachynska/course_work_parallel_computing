@@ -30,7 +30,7 @@ inline void close_socket_ollama(int sock) {
 using namespace std;
 
 bool Ollama::is_working() {
-    httplib::Client cli("ollama", 11434);
+    httplib::Client cli(api_url, 11434);
     cli.set_connection_timeout(5, 0);
     cli.set_read_timeout(5, 0);
     auto response = cli.Get("/api/version");
@@ -39,7 +39,7 @@ bool Ollama::is_working() {
 }
 
 string Ollama::send_request(string prompt) {
-    httplib::Client cli("ollama", 11434);
+    httplib::Client cli(api_url, 11434);
     cli.set_connection_timeout(5, 0);
     cli.set_read_timeout(90, 0);
     json body = {{"model", model_name}, {"prompt", prompt}, {"stream", false}};
@@ -56,9 +56,8 @@ vector<string> Ollama::process_answer(string answer){
     vector<string> terms;
     auto result = json::parse(answer, nullptr, false);
 
-    if(result.is_discarded() || !result.contains("response") || !result["response"].is_string()) {
+    if(result.is_discarded() || !result.contains("response") || !result["response"].is_string())
         return terms;
-    }
 
     string response = result["response"].get<string>();
     stringstream stream(response);
@@ -70,19 +69,23 @@ vector<string> Ollama::process_answer(string answer){
         
         if (start != string::npos)
             terms.push_back(term.substr(start, end - start + 1));
-        
     }
 
-    if(terms.empty()) {
+    if(terms.empty()) 
         cerr << "Warning: No terms extracted from response: " << response << endl;
-    }   
 
     return terms;
 }
 
 vector<string> Ollama::expand_query(string query){
     lock_guard<mutex> lock(mtx);
-    string prompt = "Return English keywords and synonyms for: " + query + ". Return only words separated by commas.";
+    string prompt =
+    "Extract the main concepts from the search query and add relevant synonyms. "
+    "Return only English search terms separated by commas on one line. "
+    "Do not include explanations, headings, numbering, or quotation marks. "
+    "Example output: stars, astronomy, cosmos, galaxies\n"
+    "Search query: " + query;
+
     string response = send_request(prompt);
     if (response.empty()) {
         cerr << "Warning: Empty response for query: " << query << endl;

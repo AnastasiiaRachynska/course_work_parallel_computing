@@ -19,14 +19,12 @@ public:
     Ollama ollama;
     InvertedIndex invertedIndex;
     InvertedIndex::stats_data statics;
-    
-    // SearchSystem();
 
     json search(string query);
     InvertedIndex::stats_data index_dataset(int threads_num);
     InvertedIndex::stats_data get_stats();
     json search_stream(string query, ix::WebSocket& client);
 
-}; // SearchSystem
+};
 
-#endif //COURSE_WORK_PARALLEL_COMPUTING_SEARCHSYSTEM_H
+#endif

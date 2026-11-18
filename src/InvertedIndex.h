@@ -7,6 +7,7 @@
 #include <vector>
 #include <string>
 #include <mutex>
+#include <unordered_set>
 
 using namespace std;
 
@@ -26,21 +27,15 @@ class InvertedIndex {
         int build_time_ms = 0;
     };
 
-
     vector<vector<Raw>> index;
     vector<mutex> index_mutexes;
 
-    //vector<int> stats_data;
     stats_data statics;
 
     InvertedIndex();
-    void add_document(vector<string> terms, string doc_id);
+    void add_document(const unordered_set<string>& terms, string doc_id);
     void clear();
     vector<string> find_documents(string term);
-
-    // vector<int> get_stats();
-
     };
 
-
-#endif //COURSE_WORK_PARALLEL_COMPUTING_INVERTEDINDEX_H
+#endif

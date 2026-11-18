@@ -31,4 +31,4 @@ public:
     ~ThreadPool() ;
 };
 
-#endif //COURSE_WORK_PARALLEL_COMPUTING_THREADPOOL_H
+#endif

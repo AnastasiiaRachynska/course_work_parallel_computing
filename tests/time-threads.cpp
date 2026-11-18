@@ -7,10 +7,10 @@
 using namespace std;
 
 int main() {
-    Ollama ollama;
-    SearchSystem searchSystem(ollama);
-    vector<int> threads_nums = {1, 2, 4, 8};
+    SearchSystem searchSystem;
+    vector<int> threads_nums = {8, 16, 32, 64};
     for (int threads : threads_nums) {
+        cout << "Indexing with " << threads << " threads..." << endl;
         InvertedIndex::stats_data stats = searchSystem.index_dataset(threads);
         cout << threads << " - " << stats.docs_num << " - " << stats.build_time_ms<< endl;
     }

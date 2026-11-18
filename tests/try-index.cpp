@@ -12,8 +12,6 @@ int main() {
     InvertedIndex::stats_data stats = searchSystem.index_dataset(4);
     cout << "Indexed " << stats.docs_num << " documents in " << stats.build_time_ms << " ms using " << stats.threads_num << " threads." << std::endl;
     
-    // cout << searchSystem.invertedIndex.index << endl;
-
     for (const auto& bucket : searchSystem.invertedIndex.index) {
         for (const Raw& entry : bucket){
             cout << entry.term << ": ";
