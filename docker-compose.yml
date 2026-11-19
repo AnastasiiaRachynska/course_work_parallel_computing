@@ -3,10 +3,12 @@ services:
     build: .
     ports:
       - "8080:8080"
-    environment:
-      - OLLAMA_HOST=http://ollama:11434
+      - "8081:8081"
+    volumes:
+      - ./data/train:/app/data/train:ro
     depends_on:
-      - ollama
+      ollama-model:
+        condition: service_completed_successfully
     restart: always
 
   ollama:
@@ -15,7 +17,33 @@ services:
       - "11434:11434"
     volumes:
       - ollama_data:/root/.ollama
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
     restart: always
+
+  ollama-model:
+    image: ollama/ollama:latest
+    depends_on:
+      ollama:
+        condition: service_healthy
+    entrypoint: ["ollama"]
+    command: ["pull", "llama3"]
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    restart: "no"
+
+  web:
+    image: nginx:alpine
+    ports:
+      - "8000:80"
+    volumes:
+      - ./web:/usr/share/nginx/html:ro
+    depends_on:
+      - search-server
 
 volumes:
   ollama_data:

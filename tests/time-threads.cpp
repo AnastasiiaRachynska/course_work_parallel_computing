@@ -1,8 +1,7 @@
 #include <iostream>
-#include "D:\GIT\WEB2.0\course_work_parallel_computing\src\SearchSystem.h"
-#include "D:\GIT\WEB2.0\course_work_parallel_computing\src\Ollama.h"
+#include "../src/SearchSystem.h"
+#include "../src/Ollama.h"
 #include <vector>
-#include <thread>
 
 using namespace std;
 

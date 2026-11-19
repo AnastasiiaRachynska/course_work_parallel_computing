@@ -3,3 +3,4 @@ cmake-build-*/
 .idea/
 .vscode/c_cpp_properties.json
 build/
+tests/__pycache__/locustfile.cpython-312.pyc

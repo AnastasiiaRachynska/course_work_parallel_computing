@@ -1,18 +1,19 @@
-FROM  ubuntu:22.04 AS builder
+FROM ubuntu:22.04 AS builder
 
-RUN apt-get update && apt-get install -y\
-     build-essential cmake git && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential cmake git ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 COPY . .
-RUN mkdir build && cd build && cmake .. && make
 
-FROM  ubuntu:22.04
+RUN cmake -S . -B build -DCMAKE_BUILD_TYPE=Release \
+    && cmake --build build --config Release --target course_work_parallel_computing
+
+FROM ubuntu:22.04
 WORKDIR /app
+
 COPY --from=builder /app/build/course_work_parallel_computing /app/main
-COPY --from=builder /app/data /app/data
-COPY --from=builder /app/build/search /app/search
 
-EXPOSE 8080
-
+EXPOSE 8080 8081
 CMD ["./main"]

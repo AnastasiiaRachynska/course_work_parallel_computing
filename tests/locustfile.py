@@ -9,8 +9,8 @@ class SearchUser(HttpUser):
     @task
     def search(self):
         with self.client.post(
-            "api/search",
-            json={"query": choice(self.queries)},
+            "/api/search",
+            json={"query": choice(self.queries), "mode":"keyword"},
             name = "POST /api/search",
             catch_response=True
         ) as response:

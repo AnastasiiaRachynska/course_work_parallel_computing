@@ -53,3 +53,19 @@ add_executable(try_index
     src/ThreadPool.cpp
 )
 target_link_libraries(try_index PRIVATE nlohmann_json::nlohmann_json httplib::httplib ixwebsocket::ixwebsocket)
+
+add_executable(time_threads
+    tests/time-threads.cpp
+    src/SearchSystem.cpp
+    src/InvertedIndex.cpp
+    src/Ollama.cpp
+    src/ThreadPool.cpp
+)
+
+target_link_libraries(time_threads PRIVATE nlohmann_json::nlohmann_json httplib::httplib ixwebsocket::ixwebsocket)
+
+add_executable(try_ollama tests/try-ollama.cpp src/Ollama.cpp)
+target_link_libraries(try_ollama PRIVATE
+    nlohmann_json::nlohmann_json
+    httplib::httplib
+)
