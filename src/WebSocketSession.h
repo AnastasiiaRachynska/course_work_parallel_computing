@@ -1,13 +1,14 @@
-//
-// Created by User on 15.10.2026.
-//
-
 #ifndef COURSE_WORK_PARALLEL_COMPUTING_WEBSOCKETSESSION_H
 #define COURSE_WORK_PARALLEL_COMPUTING_WEBSOCKETSESSION_H
 
-namespace WebSocketSession {
-    class WebSocketSession {
-    };
-} // WebSocketSession
+#include "SearchSystem.h"
+#include "ThreadPool.h"
+#include <ixwebsocket/IXWebSocketServer.h>
+using namespace std;
 
-#endif //COURSE_WORK_PARALLEL_COMPUTING_WEBSOCKETSESSION_H
+class WebSocketSession {
+public:
+    static bool start(ix::WebSocketServer& server, SearchSystem& search_system, ThreadPool& thread_pool);
+};
+
+#endif
