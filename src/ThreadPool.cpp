@@ -1,7 +1,3 @@
-//
-// Created by User on 15.10.2026.
-//
-
 #include "ThreadPool.h"
 
 
@@ -16,8 +12,7 @@ void ThreadPool::worker(ThreadPool *pool) {
         {
             unique_lock<mutex> lock(pool->mtx);
             while (pool->is_working && pool->work_queue.empty())
-                pool->cv.wait(lock);
-
+                pool->cv_task_available.wait(lock);
             if (!pool->is_working && pool->work_queue.empty()) return;
             task = pool->work_queue.front();
             pool->work_queue.pop();
@@ -39,20 +34,18 @@ void ThreadPool::terminate() {
         lock_guard<mutex> lock(mtx);
         is_working = false;
     }
-    cv.notify_all();
+    cv_task_available.notify_all();
     for (int i = 0; i < threads.size(); i++) threads[i].join();
 }
 
-void ThreadPool::addTask(function<void()> task) {
-    bool added = false;
+void ThreadPool::add_task(function<void()> task) {
     {
         unique_lock<mutex> lock(mtx);
-        while (work_queue.size() >= 200) {
+        while (work_queue.size() >= 200)
             cv_task_space.wait(lock);
-        }
         work_queue.push(task);
     }
-    cv.notify_one();
+    cv_task_available.notify_one();
 }
 
 void ThreadPool::wait_all() {

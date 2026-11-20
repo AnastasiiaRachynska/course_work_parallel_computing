@@ -10,12 +10,14 @@
 #include <sstream>
 #include <unordered_map>
 #include <unordered_set>
+#include <locale>
+#include <iostream>
+#include <atomic>
+#include <cctype>
 
 using json = nlohmann::json;
 using namespace std::filesystem;
 using namespace std::chrono;
-
-// SearchSystem::SearchSystem(Ollama& ollama_instance) : ollama(ollama_instance){}
 
 InvertedIndex::stats_data SearchSystem::get_stats() {
     shared_lock<shared_mutex> lock(mtx);
@@ -23,51 +25,46 @@ InvertedIndex::stats_data SearchSystem::get_stats() {
 }
 
 
-bool create_snippet(string doc_id, const unordered_set<string>& terms, string& snippet) {
-    bool found = false;
+bool create_snippet(const string& doc_id, const unordered_set<string>& terms, string& snippet) {
     snippet = "";
+
     ifstream file("data/train/" + doc_id + ".txt");
+    if (!file.is_open())return false;
 
-    if (!file.is_open()) return found;
     string word;
-
+    bool found = false;
     while (file >> word) {
         if (!found && terms.count(standardize_word(word))) found = true;
-        
-        if (found){
-            if(!snippet.empty()) snippet += " ";
+
+        if (found) {
+            if (!snippet.empty()) snippet += " ";
+
             size_t remaining = 200 - snippet.size();
             snippet += word.substr(0, remaining);
 
-            if (snippet.size() >= 200) break;
+            if (snippet.size() >= 200)break;
         }
     }
-    if(file.bad()) found = false;
-    return found;
-}
 
+    return found && !file.bad();
+}
 
 json SearchSystem::search(string query){
     auto start_time = steady_clock::now();
     unordered_set<string> terms;
-    string term;
     stringstream query_stream(query);
 
-    while (query_stream >> term) {
-        if (standardize_word(term) != "") terms.insert(standardize_word(term));
-    }
-    if(terms.empty()) return json{{"error", "No valid search terms"}};
+    if(query.empty()) return json{{"error", "No valid search terms"}};
 
     vector<string> expanded_terms = ollama.expand_query(query);
-    if (expanded_terms.empty()) {
-        return json{{"error", "No expanded search terms"}};
-    }
+    
+    if (expanded_terms.empty()) return json{{"error", "No expanded search terms"}};
+    
     for (const string& term : expanded_terms) {
         stringstream ss(term);
         string sub_term;
-        while (ss >> sub_term) {
+        while (ss >> sub_term)
             if (standardize_word(sub_term) != "") terms.insert(standardize_word(sub_term));
-        }
     }
 
     unordered_map<string, int> scores;
@@ -75,19 +72,18 @@ json SearchSystem::search(string query){
 
     {
         shared_lock<shared_mutex> lock(mtx);
+
         for (const string& term : terms) {
             vector<string> docs = invertedIndex.find_documents(term);
-
-            for (const string& doc_id : docs) scores[doc_id]++;
+            for (const string& doc_id : docs)scores[doc_id]++;
         }
-        
+
         vector<pair<string, int>> sorted_results(scores.begin(), scores.end());
         sort(sorted_results.begin(), sorted_results.end(), [](const auto& a, const auto& b) {
-                 return a.second > b.second;
-        });
+            return a.second > b.second;});
 
         for (const auto& result : sorted_results) {
-            string doc_id = result.first;
+            const string& doc_id = result.first;
             string snippet;
 
             if (!create_snippet(doc_id, terms, snippet))
@@ -95,9 +91,10 @@ json SearchSystem::search(string query){
 
             double score = static_cast<double>(result.second) / terms.size();
 
-            results.push_back({{"doc_id", doc_id}, {"score", score},{"snippet", snippet}});
+            results.push_back({{"doc_id", doc_id},{"score", score},{"snippet", snippet}});
         }
     }
+
     auto end_time = steady_clock::now();
     auto search_time_ms = duration_cast<milliseconds>(end_time - start_time).count();
 
@@ -110,35 +107,57 @@ InvertedIndex::stats_data SearchSystem::index_dataset(int threads_num) {
 
     auto start_time = steady_clock::now();
     atomic<int> docs_indexed{0};
+    atomic<bool> index_failed{false};
     
     if(threads_num > 0)
     {
         ThreadPool index_pool(threads_num);
         vector<path> files_to_index;
         invertedIndex.clear();
+        invertedIndex.statics.success = true;
 
-        for (const auto& entry : directory_iterator("data/test")) {
-            if (entry.is_regular_file() && entry.path().extension() == ".txt") {
-                files_to_index.push_back(entry.path());
-            }
-        }
 
-        for (size_t i = 0; i < files_to_index.size(); i++) {
-            const auto& file_path = files_to_index[i];
+        for (const auto& file_path : files_to_index) {
             string doc_id = file_path.stem().string();
 
-            index_pool.addTask([this, file_path, doc_id, &docs_indexed] {
-                vector<string> terms ;
-                string term;
-                ifstream file(file_path);
+            index_pool.add_task([this, file_path, doc_id, &docs_indexed, &index_failed] {
+                unordered_set<string> terms;
 
-                while (file >> term) terms.push_back(term);
+                ifstream file(file_path);
+                string line, word;
+
+                const locale file_locale = file.getloc();
+                const auto& char_type = use_facet<ctype<char>>(file_locale);
+
+                while (getline(file, line)) {
+
+                    for (unsigned char c : line) {
+                        if (char_type.is(ctype_base::space, static_cast<char>(c))) {
+                            if (!word.empty())terms.insert(word);
+                            word.clear();
+                        } else if (isalnum(c))
+                            word += static_cast<char>(tolower(c));
+                    }
+
+                    if (!word.empty()) terms.insert(word);
+                }
+
+                if (!file.eof() || file.bad()) {
+                    cout << "Cannot read file: " << file_path << endl;
+                    index_failed = true;
+                    return;
+                }
 
                 invertedIndex.add_document(terms, doc_id);
                 docs_indexed++;
             });
         }
         index_pool.wait_all();
+        if (index_failed) {
+            invertedIndex.clear();
+            invertedIndex.statics.success = false;
+            return invertedIndex.statics;
+        }
     }
 
     auto end_time = steady_clock::now();
@@ -152,23 +171,16 @@ InvertedIndex::stats_data SearchSystem::index_dataset(int threads_num) {
 json SearchSystem::search_stream(string query, ix::WebSocket& client){
     auto start_time = steady_clock::now();
     unordered_set<string> terms;
-    string term;
     stringstream query_stream(query);
 
-    while (query_stream >> term) {
-        if (standardize_word(term) != "") terms.insert(standardize_word(term));
-    }
-    if(terms.empty()) return json{{"error", "No valid search terms"}};
+    if(query.empty()) return json{{"error", "No valid search terms"}};
 
     vector<string> expanded_terms = ollama.expand_query(query);
-    if (expanded_terms.empty()) {
-        return json{{"error", "No expanded search terms"}};
-    }
+
+    if (expanded_terms.empty()) return json{{"error", "No expanded search terms"}};
 
     json message = {{"stage", "query_expansion"}, 
-        {"data", {
-            {"original", query},
-            {"expanded_terms", expanded_terms}}}};
+        {"data", {{"original", query}, {"expanded_terms", expanded_terms}}}};
     auto send_result = client.send(message.dump());
 
     if(!send_result.success)
@@ -177,9 +189,8 @@ json SearchSystem::search_stream(string query, ix::WebSocket& client){
     for (const string& term : expanded_terms) {
         stringstream ss(term);
         string sub_term;
-        while (ss >> sub_term) {
+        while (ss >> sub_term)
             if (standardize_word(sub_term) != "") terms.insert(standardize_word(sub_term));
-        }
     }
 
     unordered_map<string, int> scores;
@@ -187,19 +198,18 @@ json SearchSystem::search_stream(string query, ix::WebSocket& client){
 
     {
         shared_lock<shared_mutex> lock(mtx);
+
         for (const string& term : terms) {
             vector<string> docs = invertedIndex.find_documents(term);
-
             for (const string& doc_id : docs) scores[doc_id]++;
         }
-        
+
         vector<pair<string, int>> sorted_results(scores.begin(), scores.end());
         sort(sorted_results.begin(), sorted_results.end(), [](const auto& a, const auto& b) {
-                 return a.second > b.second;
-        });
+            return a.second > b.second;});
 
         for (const auto& result : sorted_results) {
-            string doc_id = result.first;
+            const string& doc_id = result.first;
             string snippet;
 
             if (!create_snippet(doc_id, terms, snippet))
@@ -207,26 +217,38 @@ json SearchSystem::search_stream(string query, ix::WebSocket& client){
 
             double score = static_cast<double>(result.second) / terms.size();
 
-            results.push_back({{"doc_id", doc_id}, {"score", score},{"snippet", snippet}});
+            results.push_back({{"doc_id", doc_id},{"score", score},{"snippet", snippet}});
         }
     }
 
+ 
     auto end_time = steady_clock::now();
     auto search_time_ms = duration_cast<milliseconds>(end_time - start_time).count();
     
     message = {{"stage", "keyword_search"}, 
-        {"data", {
-            {"results", results},
-            {"time_ms", search_time_ms}}}};
-    auto send_result2 = client.send(message.dump());
+        {"data", {{"results", results}, {"time_ms", search_time_ms}}}};
+    auto send_result2 = client.send(message.dump(-1, ' ', false, json::error_handler_t::replace));
+    
     if(!send_result2.success)
         return json{{"error", "Failed to send keyword search message"}};
     
-
     message = {{"stage", "done"}};
     auto send_result3 = client.send(message.dump());
-    if(!send_result3.success)
-        return json{{"error", "Failed to send done message"}};
+    if(!send_result3.success) return json{{"error", "Failed to send done message"}};
     
     return {{"results", results}, {"time_ms", search_time_ms}};
 }
+
+
+
+// auto ollama_start = steady_clock::now();
+    // vector<string> expanded_terms = ollama.expand_query(query);
+    // auto ollama_end = steady_clock::now();
+    // auto ollama_time_ms = duration_cast<milliseconds>(ollama_end - ollama_start).count();
+    // std::cout << "Ollama time: " << ollama_time_ms << " ms" << std::endl;
+
+  // auto keyword_start = steady_clock::now();
+
+// auto keyword_end = steady_clock::now();
+    // auto keyword_time_ms = duration_cast<milliseconds>(keyword_end - keyword_start).count();
+    // std::cout << "Keyword search time: " << keyword_time_ms << " ms" << std::endl;

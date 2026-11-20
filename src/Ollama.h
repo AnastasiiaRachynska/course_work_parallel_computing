@@ -9,7 +9,7 @@ using namespace std;
 class Ollama {
 private:
     string send_request(std::string prompt);
-    vector<string> process_answer(std::string answer);
+    vector<std::string> process_answer(std::string answer);
 public:
     string model_name = "llama3";
     mutex mtx;

@@ -30,21 +30,19 @@ string Ollama::send_request(string prompt) {
     json body = {{"model", model_name}, {"prompt", prompt}, {"stream", false}};
 
     auto response = cli.Post("/api/generate", body.dump(), "application/json");
-    if (!response || response->status != 200) {
-        cerr << "Error: Failed to get response from Ollama API" << endl;
-        return "";
-    }
+    if (!response || response->status != 200) return "";
+    
     return response->body;
 } 
 
 vector<string> Ollama::process_answer(string answer){
     vector<string> terms;
-    auto result = json::parse(answer, nullptr, false);
+    json result = json::parse(answer, nullptr, false);
 
-    if(result.is_discarded() || !result.contains("response") || !result["response"].is_string())
+    if(!result.contains("response") || !result["response"].is_string())
         return terms;
 
-    string response = result["response"].get<string>();
+    string response = result["response"];
     stringstream stream(response);
     string term;
 
@@ -55,9 +53,6 @@ vector<string> Ollama::process_answer(string answer){
         if (start != string::npos)
             terms.push_back(term.substr(start, end - start + 1));
     }
-
-    if(terms.empty()) 
-        cerr << "Warning: No terms extracted from response: " << response << endl;
 
     return terms;
 }
@@ -71,9 +66,7 @@ vector<string> Ollama::expand_query(string query){
     "Search query: " + query;
 
     string response = send_request(prompt);
-    if (response.empty()) {
-        cerr << "Warning: Empty response for query: " << query << endl;
-        return {};
-    }
+
+    if (response.empty())return {};
     return process_answer(response);
 }

@@ -14,19 +14,24 @@ using namespace std;
 
 class ThreadPool {
 private:
+
     vector<thread> threads;
     queue<function<void()>> work_queue;
     mutex mtx;
+
     int active_tasks = 0;
+
     condition_variable cv_tasks_done;
     condition_variable cv_task_space;
-    condition_variable cv;
+    condition_variable cv_task_available;
+
     atomic<bool> is_working;
     static void worker(ThreadPool* pool);
+    
 public:
     ThreadPool(int numThreads);
     void terminate();
-    void addTask(function<void()> task);
+    void add_task(function<void()> task);
     void wait_all();
     ~ThreadPool() ;
 };
