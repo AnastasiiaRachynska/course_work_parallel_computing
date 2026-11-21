@@ -24,8 +24,9 @@ void ApiHandler::handle_request(int client_socket, string request) {
     else if (request.find("POST /api/index") != string::npos)
         send_response(client_socket, handle_index(extract_body(request)));
     
-    else if (request.find("POST /api/search") != string::npos) 
+    else if (request.find("POST /api/search") != string::npos) {
         send_response(client_socket, handle_search(extract_body(request)));
+    }
     
     else if (request.find("GET /api/stats") != string::npos) 
         send_response(client_socket, handle_stats());
@@ -35,7 +36,7 @@ void ApiHandler::handle_request(int client_socket, string request) {
 void ApiHandler::send_response(int client_socket, json json_response) {
     string body = json_response.dump(-1, ' ', false, json::error_handler_t::replace);
 
-    string response = "HTTP/1.1 200 OK\r\n"
+    string response = "HTTP/1.1 " + status + "\r\n"
         "Content-Type: application/json; charset=UTF-8\r\n"
         "Access-Control-Allow-Origin: http://localhost:8000\r\n"
         "Access-Control-Allow-Methods: GET, POST, OPTIONS\r\n"
@@ -54,14 +55,17 @@ json ApiHandler::handle_index(string threads) {
     int threads_num = json::parse(threads).value("threads", 8);
    
     InvertedIndex::stats_data raw_results = engine.index_dataset(threads_num);
-    if (!raw_results.success)
+    if (!raw_results.success){
+        status = "500 Internal Server Error";
         return {{"error", "Failed to read a document during indexing"}};
-
+    }
+        
     return {{"status", "OK"}, {"documents_indexed", raw_results.docs_num}, {"time_ms", raw_results.build_time_ms}};
 }
 
 json ApiHandler::handle_search(string query) {
     json request = json::parse(query, nullptr, false);
+    status = "400 Bad Request";
     
     if (request.is_discarded()) return json{{"error", "Invalid JSON"}};
     
@@ -72,7 +76,12 @@ json ApiHandler::handle_search(string query) {
         return {{"error", "Field 'mode' must be a keyword"}};
 
     string search_query = request["query"];
-    return engine.search(search_query);
+    json results = engine.search(search_query);
+
+    
+    if(results.contains("error")) status = "500 Internal Server Error";
+    else status = "200 OK";
+    return results;
 }
 
 json ApiHandler::handle_stats() {

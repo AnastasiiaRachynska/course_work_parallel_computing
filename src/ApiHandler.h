@@ -9,6 +9,7 @@ using namespace std;
 class ApiHandler {
 public:
     SearchSystem& engine;
+    string status = "200 OK";
 
     ApiHandler(SearchSystem& engine);
 
