@@ -38,6 +38,7 @@ add_executable(course_work_parallel_computing
         src/InvertedIndex.h
         src/ThreadPool.cpp
         src/ThreadPool.h
+        src/HashTable.cpp
 )
 
 target_link_libraries(course_work_parallel_computing PRIVATE nlohmann_json::nlohmann_json httplib::httplib ixwebsocket::ixwebsocket)
@@ -51,6 +52,7 @@ add_executable(try_index
     src/InvertedIndex.cpp
     src/Ollama.cpp
     src/ThreadPool.cpp
+    src/HashTable.cpp
 )
 target_link_libraries(try_index PRIVATE nlohmann_json::nlohmann_json httplib::httplib ixwebsocket::ixwebsocket)
 
@@ -60,11 +62,12 @@ add_executable(time_threads
     src/InvertedIndex.cpp
     src/Ollama.cpp
     src/ThreadPool.cpp
+    src/HashTable.cpp
 )
 
 target_link_libraries(time_threads PRIVATE nlohmann_json::nlohmann_json httplib::httplib ixwebsocket::ixwebsocket)
 
-add_executable(try_ollama tests/try-ollama.cpp src/Ollama.cpp)
+add_executable(try_ollama tests/try-ollama.cpp src/Ollama.cpp src/HashTable.cpp)
 target_link_libraries(try_ollama PRIVATE
     nlohmann_json::nlohmann_json
     httplib::httplib

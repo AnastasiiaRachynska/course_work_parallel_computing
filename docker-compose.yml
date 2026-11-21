@@ -7,7 +7,7 @@ services:
     volumes:
       - ./data/train:/app/data/train:ro
     depends_on:
-      ollama-model:
+      ollama-warmup:
         condition: service_completed_successfully
     restart: always
 
@@ -17,6 +17,8 @@ services:
       - "11434:11434"
     volumes:
       - ollama_data:/root/.ollama
+    environment:
+      OLLAMA_KEEP_ALIVE: "-1"
     healthcheck:
       test: ["CMD", "ollama", "list"]
       interval: 5s
@@ -32,6 +34,17 @@ services:
         condition: service_healthy
     entrypoint: ["ollama"]
     command: ["pull", "llama3"]
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    restart: "no"
+
+  ollama-warmup:
+    image: ollama/ollama:latest
+    depends_on:
+      ollama-model:
+        condition: service_completed_successfully
+    entrypoint: ["ollama"]
+    command: ["run", "llama3", ""]
     environment:
       OLLAMA_HOST: http://ollama:11434
     restart: "no"
