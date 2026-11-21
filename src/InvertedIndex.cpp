@@ -5,7 +5,7 @@ using namespace std;
 
 
 
-string standardize_word(const string& raw_word) {
+string standardize_word(string& raw_word) {
     string result = "";
     for (unsigned char c : raw_word)
         if (isalnum(c)) result += static_cast<char>(tolower(c));

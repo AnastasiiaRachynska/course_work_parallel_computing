@@ -52,7 +52,6 @@ bool create_snippet(const string& doc_id, const unordered_set<string>& terms, st
 json SearchSystem::search(string query){
     auto start_time = steady_clock::now();
     unordered_set<string> terms;
-    stringstream query_stream(query);
 
     if(query.empty()) return json{{"error", "No valid search terms"}};
 
@@ -116,6 +115,11 @@ InvertedIndex::stats_data SearchSystem::index_dataset(int threads_num) {
         invertedIndex.clear();
         invertedIndex.statics.success = true;
 
+        for (const auto& entry : directory_iterator("data/train")) {
+            if (entry.is_regular_file() && entry.path().extension() == ".txt")
+                files_to_index.push_back(entry.path());
+        }
+
 
         for (const auto& file_path : files_to_index) {
             string doc_id = file_path.stem().string();
@@ -126,20 +130,21 @@ InvertedIndex::stats_data SearchSystem::index_dataset(int threads_num) {
                 ifstream file(file_path);
                 string line, word;
 
-                const locale file_locale = file.getloc();
-                const auto& char_type = use_facet<ctype<char>>(file_locale);
-
                 while (getline(file, line)) {
 
                     for (unsigned char c : line) {
-                        if (char_type.is(ctype_base::space, static_cast<char>(c))) {
+                        if (isspace(c)) {
                             if (!word.empty())terms.insert(word);
                             word.clear();
                         } else if (isalnum(c))
                             word += static_cast<char>(tolower(c));
                     }
 
-                    if (!word.empty()) terms.insert(word);
+                    if (!word.empty()) {
+                        terms.insert(word);
+                        word.clear();
+                    }
+
                 }
 
                 if (!file.eof() || file.bad()) {
@@ -171,7 +176,6 @@ InvertedIndex::stats_data SearchSystem::index_dataset(int threads_num) {
 json SearchSystem::search_stream(string query, ix::WebSocket& client){
     auto start_time = steady_clock::now();
     unordered_set<string> terms;
-    stringstream query_stream(query);
 
     if(query.empty()) return json{{"error", "No valid search terms"}};
 
@@ -227,7 +231,7 @@ json SearchSystem::search_stream(string query, ix::WebSocket& client){
     
     message = {{"stage", "keyword_search"}, 
         {"data", {{"results", results}, {"time_ms", search_time_ms}}}};
-    auto send_result2 = client.send(message.dump(-1, ' ', false, json::error_handler_t::replace));
+    auto send_result2 = client.send(message.dump());
     
     if(!send_result2.success)
         return json{{"error", "Failed to send keyword search message"}};

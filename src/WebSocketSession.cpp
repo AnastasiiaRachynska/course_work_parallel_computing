@@ -11,9 +11,7 @@ using namespace std;
 
 void send_error(ix::WebSocket& client, const string& error) {
     json message = {{"stage", "error"}, {"data", {{"error", error}}}};
-
-    if (!client.send(message.dump()).success)
-        cout << "Failed to send WebSocket error" << endl;
+    client.send(message.dump());
 }
 
 bool WebSocketSession::start( ix::WebSocketServer& server, SearchSystem& searchSystem, ThreadPool& threadPool) {

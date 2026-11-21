@@ -7,7 +7,7 @@
 
 using namespace std;
 
-string standardize_word(const string& raw_word);
+string standardize_word(string& raw_word);
 
 
 class InvertedIndex {

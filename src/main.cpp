@@ -2,10 +2,7 @@
 #include <cstring>
 #include <fstream>
 #include <sstream>
-#include <queue>
 #include <thread>
-#include <mutex>
-#include <vector>
 #include <condition_variable>
 
 #include "ApiHandler.h"
@@ -14,6 +11,8 @@
 #include "SearchSystem.h"
 #include "ThreadPool.h"
 #include "WebSocketSession.h"
+#include <ixwebsocket/IXWebSocketServer.h>
+
 
 // додано ifdef, оскільки моя ос windows, а компіляція й робота сервера буде на ubuntu (докер)
 #ifdef _WIN32
@@ -27,6 +26,7 @@
 #endif
 
 #define PORT 8080
+#define WS_PORT 8081
 
 using namespace std;
 
@@ -52,7 +52,7 @@ int main() {
     serverAddr.sin_port = htons(PORT);
 
     if (bind(serverSocket, (struct sockaddr *) &serverAddr, sizeof(serverAddr)) == -1) {
-        cerr << "Bind failed\n";
+        cerr << "Bind failed" << endl;
         close_socket(serverSocket);
         return 1;
     }
@@ -64,9 +64,14 @@ int main() {
     cout << "Server listening on port " << PORT << "...\n";
     
     
-    Ollama ollama;
-    SearchSystem searchSystem(ollama);
-    ThreadPool threadPool(64); 
+    SearchSystem searchSystem;
+    ThreadPool threadPool(16); 
+
+    ix::WebSocketServer server(WS_PORT, "0.0.0.0");
+    if(!WebSocketSession::start(server, searchSystem, threadPool)){
+        close_socket(serverSocket);
+        return 1;
+    }
 
     while (true) {
         struct sockaddr_in clientAddr;
@@ -80,7 +85,7 @@ int main() {
         cout << "Connection accepted from " << inet_ntoa(clientAddr.sin_addr) << ":" << ntohs(clientAddr.sin_port) <<endl;
         //хендлер запитів і відправка
         
-        threadPool.addTask([clientSocket, &searchSystem](){
+        threadPool.add_task([clientSocket, &searchSystem](){
             char buffer[1024] = {0};
             int received = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
             if (received > 0) {
