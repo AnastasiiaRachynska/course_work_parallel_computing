@@ -13,7 +13,7 @@ string standardize_word(string& raw_word);
 class InvertedIndex {
     public:
 
-    struct stats_data {
+    struct StatsData {
         int docs_num = 0;
         int threads_num = 0;
         int build_time_ms = 0;
@@ -22,11 +22,11 @@ class InvertedIndex {
 
     HashTable index;
 
-    stats_data statics;
+    StatsData statics;
 
     void add_document(const unordered_set<string>& terms, string doc_id);
     void clear();
     vector<string> find_documents(string term);
-    };
+};
 
 #endif

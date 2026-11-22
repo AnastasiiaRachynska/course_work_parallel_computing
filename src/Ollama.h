@@ -16,9 +16,7 @@ public:
     string api_url = "ollama";
 
     vector<string> expand_query(std::string query);
-
     bool is_working();
-
 };
 
 #endif

@@ -1,8 +1,8 @@
+#include <httplib.h>
 #include "Ollama.h"
 #include <mutex>
 #include <iostream>
 #include <sstream>
-#include <httplib.h>
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
 

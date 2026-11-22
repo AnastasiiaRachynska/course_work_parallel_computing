@@ -54,7 +54,7 @@ json ApiHandler::handle_health() {
 json ApiHandler::handle_index(string threads) {
     int threads_num = json::parse(threads).value("threads", 8);
    
-    InvertedIndex::stats_data raw_results = engine.index_dataset(threads_num);
+    InvertedIndex::StatsData raw_results = engine.index_dataset(threads_num);
     if (!raw_results.success){
         status = "500 Internal Server Error";
         return {{"error", "Failed to read a document during indexing"}};
@@ -85,7 +85,7 @@ json ApiHandler::handle_search(string query) {
 }
 
 json ApiHandler::handle_stats() {
-    InvertedIndex::stats_data stats = engine.get_stats();
+    InvertedIndex::StatsData stats = engine.get_stats();
 
-    return {{"status", "OK"}, {"documents", stats.docs_num}, {"index_build_time_ms", stats.build_time_ms}, {"threads_used", stats.threads_num}};
+    return {{"documents", stats.docs_num}, {"index_build_time_ms", stats.build_time_ms}, {"threads_used", stats.threads_num}};
 }

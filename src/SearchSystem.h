@@ -18,11 +18,11 @@ public:
 
     Ollama ollama;
     InvertedIndex invertedIndex;
-    InvertedIndex::stats_data statics;
+    InvertedIndex::StatsData statics;
 
     json search(string query);
-    InvertedIndex::stats_data index_dataset(int threads_num);
-    InvertedIndex::stats_data get_stats();
+    InvertedIndex::StatsData index_dataset(int threads_num);
+    InvertedIndex::StatsData get_stats();
     json search_stream(string query, ix::WebSocket& client);
 
 };

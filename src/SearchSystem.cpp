@@ -19,7 +19,7 @@ using json = nlohmann::json;
 using namespace std::filesystem;
 using namespace std::chrono;
 
-InvertedIndex::stats_data SearchSystem::get_stats() {
+InvertedIndex::StatsData SearchSystem::get_stats() {
     shared_lock<shared_mutex> lock(mtx);
     return invertedIndex.statics;
 }
@@ -101,7 +101,7 @@ json SearchSystem::search(string query){
 }
 
 
-InvertedIndex::stats_data SearchSystem::index_dataset(int threads_num) {
+InvertedIndex::StatsData SearchSystem::index_dataset(int threads_num) {
     unique_lock<shared_mutex> lock(mtx);
 
     auto start_time = steady_clock::now();
@@ -231,7 +231,7 @@ json SearchSystem::search_stream(string query, ix::WebSocket& client){
     
     message = {{"stage", "keyword_search"}, 
         {"data", {{"results", results}, {"time_ms", search_time_ms}}}};
-    auto send_result2 = client.send(message.dump());
+    auto send_result2 = client.send(message.dump(-1, ' ', false, json::error_handler_t::replace));
     
     if(!send_result2.success)
         return json{{"error", "Failed to send keyword search message"}};
