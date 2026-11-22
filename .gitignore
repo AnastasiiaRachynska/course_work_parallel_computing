@@ -1,4 +1,7 @@
-data/
+data/test
+data/train
+data/train1
+data/train2
 cmake-build-*/
 .idea/
 .vscode/c_cpp_properties.json

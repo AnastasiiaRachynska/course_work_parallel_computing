@@ -39,6 +39,7 @@ add_executable(course_work_parallel_computing
         src/ThreadPool.cpp
         src/ThreadPool.h
         src/HashTable.cpp
+        src/HashTable.h
 )
 
 target_link_libraries(course_work_parallel_computing PRIVATE nlohmann_json::nlohmann_json httplib::httplib ixwebsocket::ixwebsocket)

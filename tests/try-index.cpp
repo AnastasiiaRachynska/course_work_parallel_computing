@@ -9,15 +9,9 @@ using namespace std;
 int main() {
     SearchSystem searchSystem;
 
-    InvertedIndex::stats_data stats = searchSystem.index_dataset(4);
+    InvertedIndex::StatsData stats = searchSystem.index_dataset(2);
     cout << "Indexed " << stats.docs_num << " documents in " << stats.build_time_ms << " ms using " << stats.threads_num << " threads." << std::endl;
     
-    for (const auto& bucket : searchSystem.invertedIndex.index) {
-        for (const Raw& entry : bucket){
-            cout << entry.term << ": ";
-            for (const auto& doc_id : entry.doc_ids) cout << doc_id << " ";
-            cout << endl;
-        }
-    }
+    searchSystem.invertedIndex.index.print(cout);
     return 0;
 }

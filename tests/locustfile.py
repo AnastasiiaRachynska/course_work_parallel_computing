@@ -43,3 +43,45 @@ class SearchUser(HttpUser):
                     response.failure("Invalid result item")
                     return
             response.success()
+
+
+    @task
+    def health(self):
+        with self.client.get("/api/health", catch_response=True) as response:
+
+            try:
+                data = response.json()
+            except ValueError:
+                response.failure("Response is not valid JSON")
+                return
+
+            if (
+                not isinstance(data, dict)
+                or not isinstance(data.get("status"), str)
+                or not isinstance(data.get("ollama"), bool)
+            ):
+                response.failure("Invalid health response")
+                return
+
+            response.success()
+
+    @task
+    def stats(self):
+        with self.client.get("/api/stats", catch_response=True) as response:
+
+            try:
+                data = response.json()
+            except ValueError:
+                response.failure("Response is not valid JSON")
+                return
+
+            if (
+                not isinstance(data, dict)
+                or not isinstance(data.get("documents"), int)
+                or not isinstance(data.get("index_build_time_ms"), (int, float))
+                or not isinstance(data.get("threads_used"), int)
+            ):
+                response.failure("Invalid stats response")
+                return
+
+            response.success()
