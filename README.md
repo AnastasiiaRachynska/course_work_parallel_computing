@@ -46,7 +46,7 @@ gcloud storage cp --recursive gs://deepmind-gutenberg/train .
 New-Item -ItemType Directory -Force train
 gcloud storage cp "gs://deepmind-gutenberg/train/1*.txt" .\train\
 ```
-Для розробки було використано дані з `10.txt` до `30000.txt` (10746 файлів, 3.9 Гб).
+Для розробки було використано дані з `10.txt` до `10002.txt`.
 
 ## Запуск через Docker Compose
 

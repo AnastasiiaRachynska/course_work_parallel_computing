@@ -1,18 +1,20 @@
-from locust import HttpUser, task, between
 from random import choice
+
+from locust import HttpUser, between, task
+
 
 class SearchUser(HttpUser):
     wait_time = between(0.5, 1.5)
 
-    queries = ("apple", "banana", "cherry")
+    queries = ("apple", "space", "god")
 
     @task
     def search(self):
         with self.client.post(
             "/api/search",
-            json={"query": choice(self.queries), "mode":"keyword"},
-            name = "POST /api/search",
-            catch_response=True
+            json={"query": choice(self.queries), "mode": "keyword"},
+            name="POST /api/search",
+            catch_response=True,
         ) as response:
             if response.status_code != 200:
                 response.failure(f"Failed with status code {response.status_code}")
@@ -22,7 +24,7 @@ class SearchUser(HttpUser):
             except ValueError:
                 response.failure("Response is not valid JSON")
                 return
-            
+
             if (
                 not isinstance(response_json, dict)
                 or not isinstance(response_json.get("results"), list)
@@ -44,11 +46,9 @@ class SearchUser(HttpUser):
                     return
             response.success()
 
-
     @task
     def health(self):
         with self.client.get("/api/health", catch_response=True) as response:
-
             try:
                 data = response.json()
             except ValueError:
@@ -68,7 +68,6 @@ class SearchUser(HttpUser):
     @task
     def stats(self):
         with self.client.get("/api/stats", catch_response=True) as response:
-
             try:
                 data = response.json()
             except ValueError:

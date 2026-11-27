@@ -76,22 +76,56 @@ int main() {
     while (true) {
         struct sockaddr_in clientAddr;
         socklen_t clientAddrLen = sizeof(clientAddr);
-        int clientSocket = accept(serverSocket, (struct sockaddr *) &clientAddr,
-                                  &clientAddrLen);
+        int clientSocket = accept(serverSocket, (struct sockaddr *) &clientAddr, &clientAddrLen);
         if (clientSocket == -1) {
             cerr << "Accept failed\n";
             continue;
         }
         cout << "Connection accepted from " << inet_ntoa(clientAddr.sin_addr) << ":" << ntohs(clientAddr.sin_port) <<endl;
-        //хендлер запитів і відправка
         
+        //хендлер запитів і відправка
         threadPool.add_task([clientSocket, &searchSystem](){
-            char buffer[1024] = {0};
-            int received = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
-            if (received > 0) {
-                ApiHandler apiHandler(searchSystem);
-                string request = buffer;
-                apiHandler.handle_request(clientSocket, request);
+            char buffer[1024];
+            string request;
+            size_t headerEnd = request.find("\r\n\r\n");
+            while(headerEnd == string::npos) {
+                int received = recv(clientSocket, buffer, sizeof(buffer), 0);
+                if (received <= 0){
+                    cerr << "Failed to receive data\n";
+                    break;
+                } 
+                request.append(buffer, received);
+                headerEnd = request.find("\r\n\r\n");
+            }
+            
+
+            if (headerEnd != string::npos) {
+                size_t contentLength = 0;
+                istringstream requestStream(request.substr(0, headerEnd));
+                string line;
+                while (getline(requestStream, line)){
+                    transform(line.begin(), line.end(), line.begin(),
+                        [](unsigned char c) { return tolower(c); });
+                if (line.find("content-length:") == 0) {
+                    contentLength = stoi(line.substr(15));
+                    break;
+                }
+            }
+                size_t bodyStart = headerEnd + 4;
+                bool complete = true;
+                while (request.size() - bodyStart < contentLength) {
+                    int received = recv(clientSocket, buffer, sizeof(buffer), 0);
+                    if (received <= 0) {
+                        cerr << "Failed to receive body data\n";
+                        complete = false;
+                        break;
+                    }
+                    request.append(buffer, received);
+                }
+                if (complete) {
+                    ApiHandler apiHandler(searchSystem);
+                    apiHandler.handle_request(clientSocket, request);
+                }
             }
             close_socket(clientSocket);
         });

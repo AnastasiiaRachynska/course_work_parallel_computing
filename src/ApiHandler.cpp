@@ -1,6 +1,6 @@
 #include "ApiHandler.h"
 #include <string>
-
+#include <sstream>
 
 
 ApiHandler::ApiHandler(SearchSystem& search_system) : engine(search_system) {}
@@ -13,24 +13,33 @@ string extract_body(string& request) {
 }
 
 void ApiHandler::handle_request(int client_socket, string request) {
-    if (request.find("OPTIONS") == 0) {
+    string first_line = request.substr(0, request.find("\r\n"));
+    istringstream first_line_stream(first_line);
+    string method, path;
+    first_line_stream >> method >> path;
+    
+    if (method == "OPTIONS") {
         send_response(client_socket, json::object());
         return;
     }
     
-    if (request.find("GET /api/health") != string::npos)
+    if (method == "GET" && path == "/api/health")
         send_response(client_socket, handle_health());
     
-    else if (request.find("POST /api/index") != string::npos)
+    else if (method == "POST" && path == "/api/index")
         send_response(client_socket, handle_index(extract_body(request)));
-    
-    else if (request.find("POST /api/search") != string::npos) {
+
+    else if (method == "POST" && path == "/api/search")
         send_response(client_socket, handle_search(extract_body(request)));
-    }
     
-    else if (request.find("GET /api/stats") != string::npos) 
+    else if (method == "GET" && path == "/api/stats")
         send_response(client_socket, handle_stats());
-    
+
+    else {
+        status = "404 Not Found";
+        send_response(client_socket, json{{"error", "Endpoint not found"}});
+    }
+
 }
 
 void ApiHandler::send_response(int client_socket, json json_response) {
@@ -52,8 +61,19 @@ json ApiHandler::handle_health() {
 }
 
 json ApiHandler::handle_index(string threads) {
-    int threads_num = json::parse(threads).value("threads", 8);
+    json request = json::parse(threads, nullptr, false);
+
+    if (request.is_discarded()) {
+        status = "400 Bad Request";
+        return json{{"error", "Invalid JSON"}};
+    }
+
+    if (!request.contains("threads") || !request["threads"].is_number_integer()) {
+        status = "400 Bad Request";
+        return json{{"error", "Field 'threads' must be an integer"}};
+    }
    
+    int threads_num = request.value("threads", 8);
     InvertedIndex::StatsData raw_results = engine.index_dataset(threads_num);
     if (!raw_results.success){
         status = "500 Internal Server Error";
